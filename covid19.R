@@ -7,7 +7,7 @@ tokyo_data <- vroom::vroom("130001_tokyo_covid19_patients.csv")
 tokyo_data <- as.data.frame(tokyo_data )
 dim(tokyo_data)
 
-#9411 cases reported in Tokyo (to tokyo_data 2020/07/23)
+#9411 cases reported in Tokyo (to tokyo_data 2020/08/07)
 head(tokyo_data)
 #all in Tokyo
 table(tokyo_data$都道府県名)
@@ -18,19 +18,19 @@ pdf("cases_by_day.pdf", width = 6, height = 4)
 barplot(table(tokyo_data$曜日)[c(3, 6, 5, 4, 7, 1:2)], names = c( "Mon", "Tues", "Wed", "Thurs", "Fri", "Sat", "Sun"))
 abline(h = 0)
 title(main = "Cases in Tokyo by day of the week (reported)",
-      ylab = "Cases (to date 2020/07/23)", 
+      ylab = "Cases (to date 2020/08/07)", 
       sub = "Day reported \nSource: Tokyo Metropolitan Government Health and Welfare Bureau\n https://stopcovid19.metro.tokyo.lg.jp/en/")
 dev.off()
 head(tokyo_data$曜日)
-(table(tokyo_data$曜日)[c(3, 6, 5, 4, 7, 1:2)]
+table(tokyo_data$曜日)[c(3, 6, 5, 4, 7, 1:2)]
 
 #tokyo_data reported
-cases_per_day <- table(tokyo_data$公表_年月日)
+cases_per_day <- table(c(tokyo_data$公表_年月日, rep("2020-08-07", 462)))
 pdf("cases_per_day.pdf", width = 6, height = 4)
 plot(cases_per_day, 
      col = "grey35",
      main = "Cases in Tokyo by day of the week (reported)",
-     ylab = "Cases (to date 2020/07/23)", 
+     ylab = "Cases (to date 2020/08/07)", 
      sub = "Day reported \nSource: Tokyo Metropolitan Government Health and Welfare Bureau\n https://stopcovid19.metro.tokyo.lg.jp/en/")
 abline(h = 0)
 dev.off()
@@ -52,7 +52,7 @@ pdf("cases_per_day_mean.pdf", width = 6, height = 4)
 plot(cases_per_day, 
      col = "grey35",
      main = "Cases in Tokyo by day of the week (reported)",
-     ylab = "Cases (to date 2020/07/23)", 
+     ylab = "Cases (to date 2020/08/07)", 
      sub = "Day reported \nSource: Tokyo Metropolitan Government Health and Welfare Bureau\n https://stopcovid19.metro.tokyo.lg.jp/en/")
 abline(h = 0)
 lines(rolling_mean, col = "red", lty=1, cex = 2.5)
@@ -70,7 +70,7 @@ pdf("cases_per_day_mean_weekly.pdf", width = 6, height = 4)
 plot(cases_per_day, 
      col = pal[as.numeric(days)],
      main = "Cases in Tokyo by day of the week (reported)",
-     ylab = "Cases (to date 2020/07/23)", 
+     ylab = "Cases (to date 2020/08/07)", 
      sub = "Day reported \nSource: Tokyo Metropolitan Government Health and Welfare Bureau\n https://stopcovid19.metro.tokyo.lg.jp/en/")
 abline(h = 0)
 lines(rolling_mean, col = "red", lty=1, cex = 2.5)
@@ -78,13 +78,7 @@ legend("top", lty = 1, legend = "7-day mean (rolling)", col = "red")
 legend("topleft", fill = pal, legend = c("Mon", "Tues", "Wed", "Thurs", "Fri", "Sat", "Sun"))
 dev.off()
 
-tokyo_testing <- vroom::vroom("200718_tokyo_testing.csv")
-tokyo_testing <- as.data.frame(tokyo_testing )
-dim(tokyo_testing)
-head(tokyo_testing)
-tokyo_testing[,1] <- as.Date(tokyo_testing[,1])
-
-tokyo_testing <- openxlsx::read.xlsx("2020718_tokyo_testing.xlsx", colNames = TRUE)
+tokyo_testing <- openxlsx::read.xlsx("20200807_tokyo_testing.xlsx", colNames = TRUE)
 tokyo_testing <- as.data.frame(tokyo_testing)
 tokyo_testing[,1] <- openxlsx::convertToDate(tokyo_testing[,1])
 colnames(tokyo_testing)[1:7] <- c("Date", "PosPCR", "PosAntigen", "NegPCR", "NegAntigen", "Testing(7-day-mean)", "PosRate")
@@ -94,10 +88,10 @@ tail(tokyo_testing)
 head(cases_per_day)
 tail(cases_per_day)
 
-names(tests_per_day) <- rev(tokyo_testing$Date)
-tests_per_day <- rev(tokyo_testing$`Testing(7-day-mean)`)
-head(tests_per_day, 12)
-tail(tests_per_day)
+# names(tests_per_day) <- rev(tokyo_testing$Date)
+# tests_per_day <- rev(tokyo_testing$`Testing(7-day-mean)`)
+# head(tests_per_day, 12)
+# tail(tests_per_day)
 ## tests usually reported with 2-3 day with weekly-averages 
 ## no longer needed as latest figures used from NHK broadcast
 #tests_per_day <- c(tests_per_day[10:length(tests_per_day)], NA, NA)
@@ -114,23 +108,22 @@ community_rate_change <- rev(tokyo_testing$rate_change_community)
 tests_summary <- cbind(total_pos, total_neg, total_tests, pos_rate, testing, pos_known, pos_community, pos_community_weekly, community_rate_change)
 tests_summary <- as.data.frame(tests_summary)
 tests_summary$Date <- rev(tokyo_testing$Date)
-tests_summary <- tests_summary[,c(6, 1:6)]
-tests_summary <- tests_summary[1:nrow(tests_summary),]
+# tests_summary <- tests_summary[,c(6, 1:6)]
+# tests_summary <- tests_summary[1:nrow(tests_summary),]
 ## tests usually reported with 2-3 day with weekly-averages 
 ## no longer needed as latest figures used from NHK broadcast
 #tests_summary[nrow(tests_summary)+1:2,] <- NA
 #tests_summary[nrow(tests_summary)-1:0,1] <- tests_summary$Date[nrow(tests_summary)-2]+1:2
 ## adjust for initial days with few tests / cases (on different days)
-tests_summary2 <- as.data.frame(matrix(NA, nrow(tests_summary)+5, ncol(tests_summary)))
-tests_summary2[1:nrow(tests_summary)+5,] <- tests_summary
-tests_summary2[,1] <- as.Date(tests_summary2[,1])
-tests_summary2[1:5,1] <- as.Date(names(cases_per_day)[1:5])
-tail(tests_summary2)
-tests_summary2 <- tests_summary
-rm(tests_summary2)
+# tests_summary2 <- as.data.frame(matrix(NA, nrow(tests_summary)+5, ncol(tests_summary)))
+# tests_summary2[1:nrow(tests_summary)+5,] <- tests_summary
+# tests_summary2[,1] <- as.Date(tests_summary2[,1])
+# tests_summary2[1:5,1] <- as.Date(names(cases_per_day)[1:5])
+# tail(tests_summary2)
+# tests_summary2 <- tests_summary
+# rm(tests_summary2)
 
-tests_per_day[1:6]
-tail(tests_per_day)
+
 tests_summary$Date[match(as.Date(names(cases_per_day)), tests_summary$Date)]
 tests_per_day <- tests_summary$testing[match(as.Date(names(cases_per_day)), tests_summary$Date)]
 tests_per_day[1:6]
@@ -141,7 +134,7 @@ plot(cases_per_day,
      ylim = c(0, max(tests_per_day, na.rm = T)),
      col = pal[as.numeric(days)],
      main = "Cases in Tokyo by day of the week (reported)",
-     ylab = "Cases (to date 2020/07/23)", 
+     ylab = "Cases (to date 2020/08/07)", 
      sub = "Day reported \nSource: Tokyo Metropolitan Government Health and Welfare Bureau\n https://stopcovid19.metro.tokyo.lg.jp/en/")
 abline(h = 0)
 lines(rolling_mean, col = "red", lty=1, cex = 2.5)
@@ -150,7 +143,9 @@ legend("top", lty = c(1, 1), legend = c("cases (7-day mean)", "tests (7-day mean
 legend("topleft", fill = pal, legend = c("Mon", "Tues", "Wed", "Thurs", "Fri", "Sat", "Sun"))
 dev.off()
 
-tests_pos_rate <- tests_summary$pos_rate[match(as.Date(names(cases_per_day)), tests_summary$Date)]
+tests_pos_rate_weekly <- tests_summary$pos_rate[match(as.Date(names(cases_per_day)), tests_summary$Date)]
+tests_pos_rate <- as.vector(cases_per_day[match(tests_summary$Date, as.Date(names(cases_per_day)))] / tests_summary$total_tests * 100)
+tests_pos_rate[is.na(match(tests_summary$Date, as.Date(names(cases_per_day))))] <- NA
 
 pdf("cases_per_day_mean_weekly_tests_pos.pdf", width = 6, height = 4)
 par(mar = c(5.1, 4.1, 4.1, 5.1))
@@ -158,14 +153,15 @@ plot(cases_per_day,
      #ylim = c(0, max(tests_per_day, na.rm = T)),
      col = pal[as.numeric(days)],
      main = "Cases in Tokyo by day of the week (reported)",
-     ylab = "Cases (to date 2020/07/23)", 
+     ylab = "Cases (to date 2020/08/07)", 
      sub = "Day reported \nSource: Tokyo Metropolitan Government Health and Welfare Bureau\n https://stopcovid19.metro.tokyo.lg.jp/en/")
 abline(h = 0)
 lines(rolling_mean, col = "red", lty=1, cex = 2.5)
-lines(tests_pos_rate * 5, col = "blue",  lty=1, cex = 2.5)
+lines(tests_pos_rate_weekly * 5, col = "blue",  lty=1, cex = 2.5)
+lines(tests_pos_rate * 5, col = "blue",  lty=2, cex = 2.5)
 axis(4, at = seq(0, 300, 25), labels = seq(0, 300, 25)/5)
 mtext("Positive rate (%)", 4, line = 3)
-legend("top", lty = c(1, 1), legend = c("cases (7-day mean)", "pos rate (7-day mean)"), col = c("red", "blue"))
+legend("top", lty = c(1, 1, 2), legend = c("cases (7-day mean)", "pos rate (7-day mean)", "pos rate (daily"), col = c("red", "blue", "blue"))
 legend("topleft", fill = pal, legend = c("Mon", "Tues", "Wed", "Thurs", "Fri", "Sat", "Sun"), cex = 0.75)
 dev.off()
 
@@ -177,7 +173,7 @@ pdf("cases_per_day_mean_weekly_community.pdf", width = 6, height = 4)
 plot(cases_per_day, 
      col = pal[as.numeric(days)],
      main = "Cases in Tokyo by day of the week (reported)",
-     ylab = "Cases (to date 2020/07/23)", 
+     ylab = "Cases (to date 2020/08/07)", 
      sub = "Day reported \nSource: Tokyo Metropolitan Government Health and Welfare Bureau\n https://stopcovid19.metro.tokyo.lg.jp/en/")
 abline(h = 0)
 lines(rolling_mean, col = "red", lty=1, cex = 2.5)
@@ -469,8 +465,7 @@ d <- td_orig %>%
   ungroup() %>%
   mutate(smoothed_confirm = fitted(loess(confirm ~ numeric_date, data = ., span = 0.1)))
 
-
-the_caption <- "Data gathered from Tokyo Metropolitan Government; analysis by https://stopcovid19.metro.tokyo.lg.jp/en/"  
+the_caption <- "Data gathered from Tokyo Metropolitan Governmenthttps://stopcovid19.metro.tokyo.lg.jp/en/\nAnalysis based on http://freerangestats.info"
 
 # Positivity plot:
 pdf("positivity.pdf", width = 6, height = 4)
@@ -533,7 +528,7 @@ p_adj_conv <- d %>%
        colour = "")
 
 pdf("backprojection.pdf", width = 8, height = 16/3)
-print(p_adj_conv)
+print(p_adj_conv) + labs(caption = the_caption)
 dev.off()
 
 #------------Estimating R with EpiNow2---------------------
@@ -618,7 +613,8 @@ my_plot_estimates <- function(estimates, extra_title = ""){
 }
 
 pdf("estimates.pdf", width = 10, height = 20)
-my_plot_estimates(estimates)  
+my_plot_estimates(estimates) +
+  labs(caption = the_caption)
 dev.off()
 
 #---------Based on positivity-adjusted-------------
@@ -634,7 +630,8 @@ estimates2 <- EpiNow2::epinow(reported_cases = d2,
                               adapt_delta = 0.95)
 
 pdf("estimates_pos.pdf", width = 10, height = 20)
-my_plot_estimates(estimates2, extra_title = " and positivity")
+my_plot_estimates(estimates2, extra_title = " and positivity") +
+  labs(caption = the_caption)
 dev.off()
 
 #---------Based on weekly-adjusted-------------
@@ -691,7 +688,8 @@ estimates3 <- EpiNow2::epinow(reported_cases = d3,
                              adapt_delta = 0.95)
 
 pdf("estimates_weekly.pdf", width = 10, height = 20)
-my_plot_estimates(estimates3, extra_title = " and seasonally adjusted")
+my_plot_estimates(estimates3, extra_title = " and seasonally adjusted") +
+  labs(caption = the_caption)
 dev.off()
 
 d4 <- d2
@@ -705,6 +703,12 @@ estimates4 <- EpiNow2::epinow(reported_cases = d4,
                               adapt_delta = 0.95)
 
 pdf("estimates_weekly_pos.pdf", width = 10, height = 20)
-my_plot_estimates(estimates4, extra_title = " positivity and seasonally adjusted")
+my_plot_estimates(estimates4, extra_title = " positivity and seasonally adjusted") +
+  labs(caption = the_caption)
 dev.off()
 
+
+png("estimates_weekly_pos.png", width = 10*75, height = 20*75)
+my_plot_estimates(estimates4, extra_title = " positivity and seasonally adjusted") +
+  labs(caption = the_caption)
+dev.off()
